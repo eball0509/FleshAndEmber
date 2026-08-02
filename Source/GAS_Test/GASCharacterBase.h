@@ -1,5 +1,4 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
@@ -7,23 +6,26 @@
 
 class UAbilitySystemComponent;
 class UDemoAttributes;
+struct FOnAttributeChangeData;
 
 UCLASS()
 class GAS_TEST_API AGASCharacterBase : public ACharacter, public IAbilitySystemInterface
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	AGASCharacterBase();
+    AGASCharacterBase();
 
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 protected:
-	virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
-	TObjectPtr<UDemoAttributes> AttributeSet;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
+    TObjectPtr<UDemoAttributes> AttributeSet;
+
+    void OnMovementSpeedChanged(const FOnAttributeChangeData& Data);
 };
