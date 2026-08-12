@@ -39,6 +39,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Jump() override;
+	virtual void Landed(const FHitResult& Hit) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
@@ -48,4 +50,5 @@ protected:
 
 private:
 	void OnHealthAttributeChanged(const FOnAttributeChangeData& Data);
+	bool bJumpedViaInput = false;
 };

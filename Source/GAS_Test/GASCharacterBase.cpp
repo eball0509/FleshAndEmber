@@ -4,6 +4,8 @@
 #include "GameplayEffect.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AGASCharacterBase::AGASCharacterBase()
 {
@@ -45,7 +47,7 @@ void AGASCharacterBase::BeginPlay()
 			UDemoAttributes::GetHealthAttribute()
 		).AddUObject(this, &AGASCharacterBase::OnHealthAttributeChanged);
 	}
-	
+
 	// Automatically apply passive regen on server start
 	if (HasAuthority())
 	{
@@ -82,6 +84,27 @@ void AGASCharacterBase::Die()
 {
 	bIsDead = true;
 
+	// If this character is controlled by AI (an enemy), handle enemy death cleanup
+	if (Cast<APlayerController>(Controller) == nullptr)
+	{
+		// Disable capsule collision so the player doesn't trip over the corpse
+		if (GetCapsuleComponent())
+		{
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+
+		// Stop movement
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->DisableMovement();
+		}
+
+		// Destroy the enemy actor after a short delay (e.g., 3 seconds for ragdoll/animations)
+		SetLifeSpan(3.0f);
+		return;
+	}
+
+	// --- Existing Player Death Logic ---
 	if (APlayerController* PC = Cast<APlayerController>(Controller))
 	{
 		DisableInput(PC);
@@ -101,4 +124,24 @@ void AGASCharacterBase::Die()
 			}
 		}
 	}
+}
+
+void AGASCharacterBase::Jump()
+{
+	Super::Jump();
+	bJumpedViaInput = true;
+}
+
+void AGASCharacterBase::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	if (bJumpedViaInput && AbilitySystemComponent)
+	{
+		FGameplayEventData EventData;
+		EventData.EventTag = FGameplayTag::RequestGameplayTag(FName("Event.Landed"));
+		AbilitySystemComponent->HandleGameplayEvent(EventData.EventTag, &EventData);
+	}
+
+	bJumpedViaInput = false;
 }
