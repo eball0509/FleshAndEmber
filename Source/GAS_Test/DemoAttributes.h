@@ -20,6 +20,7 @@ public:
 	UDemoAttributes();
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes")
@@ -41,4 +42,19 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes")
 	FGameplayAttributeData MaxStamina;
 	ATTRIBUTE_ACCESSORS(UDemoAttributes, MaxStamina);
+
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	float GetMovementSpeedValue() const { return GetMovementSpeed(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	float GetHealthValue() const { return GetHealth(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	float GetMaxHealthValue() const { return GetMaxHealth(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	float GetStaminaValue() const { return GetStamina(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	float GetMaxStaminaValue() const { return GetMaxStamina(); }
 };

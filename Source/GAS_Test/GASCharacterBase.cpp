@@ -1,39 +1,104 @@
 #include "GASCharacterBase.h"
 #include "AbilitySystemComponent.h"
 #include "DemoAttributes.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "GameplayEffect.h"
+#include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerController.h"
 
 AGASCharacterBase::AGASCharacterBase()
 {
-    PrimaryActorTick.bCanEverTick = true;
-    AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-    AttributeSet = CreateDefaultSubobject<UDemoAttributes>(TEXT("AttributeSet"));
+	PrimaryActorTick.bCanEverTick = true;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+
+	AttributeSet = CreateDefaultSubobject<UDemoAttributes>(TEXT("AttributeSet"));
 }
 
 UAbilitySystemComponent* AGASCharacterBase::GetAbilitySystemComponent() const
 {
-    return AbilitySystemComponent;
+	return AbilitySystemComponent;
 }
 
 void AGASCharacterBase::BeginPlay()
 {
-    Super::BeginPlay();
-    if (AbilitySystemComponent)
-    {
-        AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	Super::BeginPlay();
 
-        if (AttributeSet)
-        {
-            AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMovementSpeedAttribute())
-                .AddUObject(this, &AGASCharacterBase::OnMovementSpeedChanged);
+	// Reset input mode to Game Only and hide mouse cursor on spawn
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+	}
 
-            // Sync initial value immediately, don't wait for the first change
-            GetCharacterMovement()->MaxWalkSpeed = AttributeSet->GetMovementSpeed();
-        }
-    }
+	// Initialize Ability System Component actor info
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+
+	// Listen for changes to the Health attribute
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			UDemoAttributes::GetHealthAttribute()
+		).AddUObject(this, &AGASCharacterBase::OnHealthAttributeChanged);
+	}
+	
+	// Automatically apply passive regen on server start
+	if (HasAuthority())
+	{
+		ApplyPassiveRegen();
+	}
 }
 
-void AGASCharacterBase::OnMovementSpeedChanged(const FOnAttributeChangeData& Data)
+void AGASCharacterBase::ApplyPassiveRegen()
 {
-    GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
+	if (!AbilitySystemComponent || !RegenEffectClass)
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
+	ContextHandle.AddSourceObject(this);
+
+	FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(RegenEffectClass, 1.f, ContextHandle);
+	if (SpecHandle.IsValid())
+	{
+		AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	}
+}
+
+void AGASCharacterBase::OnHealthAttributeChanged(const FOnAttributeChangeData& Data)
+{
+	if (Data.NewValue <= 0.f && !bIsDead)
+	{
+		Die();
+	}
+}
+
+void AGASCharacterBase::Die()
+{
+	bIsDead = true;
+
+	if (APlayerController* PC = Cast<APlayerController>(Controller))
+	{
+		DisableInput(PC);
+	}
+
+	if (IsLocallyControlled() && DeathScreenWidgetClass)
+	{
+		UUserWidget* DeathScreen = CreateWidget<UUserWidget>(GetWorld(), DeathScreenWidgetClass);
+		if (DeathScreen)
+		{
+			DeathScreen->AddToViewport();
+
+			if (APlayerController* PC = Cast<APlayerController>(GetController()))
+			{
+				PC->SetShowMouseCursor(true);
+				PC->SetInputMode(FInputModeUIOnly());
+			}
+		}
+	}
 }

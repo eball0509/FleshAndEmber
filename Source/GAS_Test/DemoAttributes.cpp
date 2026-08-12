@@ -1,5 +1,7 @@
 #include "DemoAttributes.h"
 #include "GameplayEffectExtension.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UDemoAttributes::UDemoAttributes()
 {
@@ -25,6 +27,26 @@ void UDemoAttributes::PreAttributeChange(const FGameplayAttribute& Attribute, fl
 	else if (Attribute == GetStaminaAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxStamina());
+	}
+}
+
+void UDemoAttributes::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+
+	// Automatically sync GAS Movement Speed attribute to the Character Movement Component
+	if (Attribute == GetMovementSpeedAttribute())
+	{
+		if (UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent())
+		{
+			if (ACharacter* AvatarCharacter = Cast<ACharacter>(ASC->GetAvatarActor()))
+			{
+				if (UCharacterMovementComponent* MovementComp = AvatarCharacter->GetCharacterMovement())
+				{
+					MovementComp->MaxWalkSpeed = NewValue;
+				}
+			}
+		}
 	}
 }
 
