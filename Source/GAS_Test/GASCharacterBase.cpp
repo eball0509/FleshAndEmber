@@ -5,6 +5,7 @@
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
+#include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 AGASCharacterBase::AGASCharacterBase()
@@ -84,9 +85,30 @@ void AGASCharacterBase::Die()
 {
 	bIsDead = true;
 
-	// If this character is controlled by AI (an enemy), handle enemy death cleanup
+	// If this character is controlled by AI (an enemy), handle enemy death cleanup & wave notification
 	if (Cast<APlayerController>(Controller) == nullptr)
 	{
+		// Notify the Wave Manager that this enemy was killed
+		if (UWorld* World = GetWorld())
+		{
+			// Find the Wave Manager actor in the level
+			for (TActorIterator<AActor> It(World); It; ++It)
+			{
+				AActor* Actor = *It;
+				if (Actor && Actor->GetClass()->GetName().Contains(TEXT("BP_WaveManager")))
+				{
+					// Use a function call or reflection, or even better: 
+					// Call a Blueprint Interface or use UFunction to trigger NotifyEnemyKilled
+					UFunction* Func = Actor->FindFunction(FName("NotifyEnemyKilled"));
+					if (Func)
+					{
+						Actor->ProcessEvent(Func, nullptr);
+					}
+					break;
+				}
+			}
+		}
+
 		// Disable capsule collision so the player doesn't trip over the corpse
 		if (GetCapsuleComponent())
 		{
@@ -99,7 +121,7 @@ void AGASCharacterBase::Die()
 			GetCharacterMovement()->DisableMovement();
 		}
 
-		// Destroy the enemy actor after a short delay (e.g., 3 seconds for ragdoll/animations)
+		// Destroy the enemy actor after a short delay (e.g., 3 seconds)
 		SetLifeSpan(3.0f);
 		return;
 	}
