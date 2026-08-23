@@ -7,6 +7,8 @@
 #include "Components/CapsuleComponent.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 AGASCharacterBase::AGASCharacterBase()
 {
@@ -75,6 +77,16 @@ void AGASCharacterBase::ApplyPassiveRegen()
 
 void AGASCharacterBase::OnHealthAttributeChanged(const FOnAttributeChangeData& Data)
 {
+	// If health decreased, spawn floating damage text at this character's location
+	if (Data.NewValue < Data.OldValue)
+	{
+		if (FloatingTextClass && GetWorld())
+		{
+			FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, 50.f);
+			GetWorld()->SpawnActor<AActor>(FloatingTextClass, SpawnLocation, FRotator::ZeroRotator);
+		}
+	}
+
 	if (Data.NewValue <= 0.f && !bIsDead)
 	{
 		Die();
@@ -97,8 +109,6 @@ void AGASCharacterBase::Die()
 				AActor* Actor = *It;
 				if (Actor && Actor->GetClass()->GetName().Contains(TEXT("BP_WaveManager")))
 				{
-					// Use a function call or reflection, or even better: 
-					// Call a Blueprint Interface or use UFunction to trigger NotifyEnemyKilled
 					UFunction* Func = Actor->FindFunction(FName("NotifyEnemyKilled"));
 					if (Func)
 					{
@@ -126,11 +136,35 @@ void AGASCharacterBase::Die()
 		return;
 	}
 
-	// --- Existing Player Death Logic ---
+	// --- Player Death Logic ---
 	if (APlayerController* PC = Cast<APlayerController>(Controller))
 	{
 		DisableInput(PC);
 	}
+
+	// Disable capsule collision so enemies stop tracking/blocking the dead body properly
+	if (GetCapsuleComponent())
+	{
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	// Tell all active enemy AI controllers that the player is dead (triggers BT decorator aborts)
+	if (UWorld* World = GetWorld())
+	{
+		for (TActorIterator<AAIController> It(World); It; ++It)
+		{
+			if (AAIController* AICon = *It)
+			{
+				if (UBlackboardComponent* BBComp = AICon->GetBlackboardComponent())
+				{
+					BBComp->SetValueAsBool(TEXT("IsPlayerDead"), true);
+				}
+			}
+		}
+	}
+
+	// Trigger the Blueprint event to hide/remove the gameplay HUD
+	HideHUD();
 
 	if (IsLocallyControlled() && DeathScreenWidgetClass)
 	{

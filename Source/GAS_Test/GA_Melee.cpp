@@ -164,8 +164,14 @@ void UGA_Melee::ResolveHit()
 		if (SpecHandle.IsValid())
 		{
 			FActiveGameplayEffectHandle ActiveHandle = AttackerASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-			UE_LOG(LogTemp, Warning, TEXT("GA_Melee: applied damage to %s, valid handle: %s"),
-				*HitCharacter->GetName(), ActiveHandle.IsValid() ? TEXT("true") : TEXT("false"));
+			UE_LOG(LogTemp, Warning, TEXT("GA_Melee: applied damage to %s, success: %s"),
+				*HitCharacter->GetName(), ActiveHandle.WasSuccessfullyApplied() ? TEXT("true") : TEXT("false"));
+
+			if (ActiveHandle.WasSuccessfullyApplied() && FloatingTextClass)
+			{
+				FVector SpawnLocation = HitCharacter->GetActorLocation() + FVector(0.f, 0.f, 50.f);
+				GetWorld()->SpawnActor<AActor>(FloatingTextClass, SpawnLocation, FRotator::ZeroRotator);
+			}
 
 			// 2. Apply Block Regen Effect with Diagnostics
 			if (!BlockRegenEffectClass)

@@ -26,6 +26,9 @@ public:
 	TSubclassOf<UGameplayEffect> BlockRegenEffectClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Melee")
+	TSubclassOf<AActor> FloatingTextClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Melee")
 	float HitSphereRadius = 150.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Melee")

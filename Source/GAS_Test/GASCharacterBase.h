@@ -34,7 +34,16 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "GAS|UI")
 	TSubclassOf<UUserWidget> DeathScreenWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "GAS|UI")
+	TSubclassOf<AActor> FloatingTextClass;
+
+	// Blueprint event to hide the gameplay HUD on death
+	UFUNCTION(BlueprintImplementableEvent, Category = "GAS|UI")
+	void HideHUD();
+
 	virtual void Die();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	bool bIsDead = false;
 
 protected:
