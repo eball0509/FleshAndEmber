@@ -1,6 +1,6 @@
 # PRO385_Project
 
-Welcome to the repository for **Flesh and Ember**, an action combat and wave-survival game built in **Unreal Engine** utilizing the powerful **Gameplay Ability System (GAS)** framework through a hybrid of C++ and Blueprints.
+Welcome to the repository for **Flesh & Ember**, an action combat and wave-survival game built in **Unreal Engine** utilizing the powerful **Gameplay Ability System (GAS)** framework through a hybrid of C++ and Blueprints.
 
 ---
 
