@@ -4,7 +4,7 @@ Welcome to the repository for **Flesh and Ember**, an action combat and wave-sur
 
 ---
 
-## 🎯 About the Project
+## About the Project
 **PRO385_Project** is an Unreal Engine gameplay system demonstration featuring robust combat mechanics and modular architecture. Key technical and design highlights include:
 * **Gameplay Ability System (GAS):** Fully integrated C++ and Blueprint abilities (including melee combos and shockwave attacks), custom attribute sets, and Gameplay Effects handling damage, passive regeneration, and cooldowns.
 * **AI & Behavior Trees:** Custom behavior tree tasks, perception tracking, and reactive blackboard states that handle combat engagement, chasing, and clean termination upon target death.
@@ -13,12 +13,12 @@ Welcome to the repository for **Flesh and Ember**, an action combat and wave-sur
 
 ---
 
-## 👥 Team Members
+## Team Members
 * **eball0509** – Lead Developer / Programmer
 
 ---
 
-## 🛠️ External Tools & Requirements
+## External Tools & Requirements
 To successfully compile, run, and edit this project, ensure your environment meets the following specifications:
 * **Game Engine:** Unreal Engine **5.6** or **5.7**
 * **C++ IDE:** Visual Studio 2022 (with the *Game Development with C++* workload) or JetBrains Rider
@@ -27,7 +27,7 @@ To successfully compile, run, and edit this project, ensure your environment mee
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 1. **Clone the Repository:**
    ```bash
