@@ -3,8 +3,10 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "GASCharacterBase.h"
 #include "DemoAttributes.h"
+#include "Sound/SoundBase.h"
 
 UGA_Melee::UGA_Melee()
 {
@@ -21,6 +23,15 @@ void UGA_Melee::ActivateAbility(
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
+	}
+
+	const FGameplayAbilityActorInfo* Info = GetCurrentActorInfo();
+	AActor* AvatarActor = Info ? Info->AvatarActor.Get() : nullptr;
+
+	// Play the single melee sound on activation
+	if (MeleeSound && AvatarActor)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, MeleeSound, AvatarActor->GetActorLocation());
 	}
 
 	if (!MeleeMontage)
@@ -150,16 +161,9 @@ void UGA_Melee::ResolveHit()
 			continue;
 		}
 
-		const UDemoAttributes* TargetAttributesBefore = Cast<UDemoAttributes>(TargetASC->GetAttributeSet(UDemoAttributes::StaticClass()));
-		if (TargetAttributesBefore)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("GA_Melee: %s Health BEFORE = %f"), *HitCharacter->GetName(), TargetAttributesBefore->GetHealth());
-		}
-
 		FGameplayEffectContextHandle ContextHandle = AttackerASC->MakeEffectContext();
 		ContextHandle.AddSourceObject(this);
 
-		// 1. Apply Damage Effect
 		FGameplayEffectSpecHandle SpecHandle = AttackerASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), ContextHandle);
 		if (SpecHandle.IsValid())
 		{
@@ -173,35 +177,18 @@ void UGA_Melee::ResolveHit()
 				GetWorld()->SpawnActor<AActor>(FloatingTextClass, SpawnLocation, FRotator::ZeroRotator);
 			}
 
-			// 2. Apply Block Regen Effect with Diagnostics
 			if (!BlockRegenEffectClass)
 			{
-				UE_LOG(LogTemp, Error, TEXT("GA_Melee: BlockRegenEffectClass is NULL! Assign GE_BlockRegen in your Melee Ability Blueprint details."));
+				UE_LOG(LogTemp, Error, TEXT("GA_Melee: BlockRegenEffectClass is NULL!"));
 			}
 			else
 			{
 				FGameplayEffectSpecHandle BlockSpecHandle = AttackerASC->MakeOutgoingSpec(BlockRegenEffectClass, GetAbilityLevel(), ContextHandle);
 				if (BlockSpecHandle.IsValid())
 				{
-					FActiveGameplayEffectHandle BlockActiveHandle = AttackerASC->ApplyGameplayEffectSpecToTarget(*BlockSpecHandle.Data.Get(), TargetASC);
-					UE_LOG(LogTemp, Warning, TEXT("GA_Melee: BlockRegen applied to %s. Success: %s"),
-						*HitCharacter->GetName(), BlockActiveHandle.IsValid() ? TEXT("TRUE") : TEXT("FALSE"));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("GA_Melee: MakeOutgoingSpec FAILED for BlockRegenEffectClass!"));
+					AttackerASC->ApplyGameplayEffectSpecToTarget(*BlockSpecHandle.Data.Get(), TargetASC);
 				}
 			}
-
-			const UDemoAttributes* TargetAttributesAfter = Cast<UDemoAttributes>(TargetASC->GetAttributeSet(UDemoAttributes::StaticClass()));
-			if (TargetAttributesAfter)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("GA_Melee: %s Health AFTER = %f"), *HitCharacter->GetName(), TargetAttributesAfter->GetHealth());
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("GA_Melee: MakeOutgoingSpec failed for %s"), *HitCharacter->GetName());
 		}
 	}
 }

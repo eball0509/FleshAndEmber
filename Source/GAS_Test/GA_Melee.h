@@ -7,6 +7,7 @@
 class UAbilityTask_PlayMontageAndWait;
 class UAnimMontage;
 class UGameplayEffect;
+class USoundBase;
 
 UCLASS()
 class GAS_TEST_API UGA_Melee : public UGameplayAbility
@@ -27,6 +28,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Melee")
 	TSubclassOf<AActor> FloatingTextClass;
+
+	// Single Audio Property
+	UPROPERTY(EditDefaultsOnly, Category = "Melee|Audio")
+	TObjectPtr<USoundBase> MeleeSound;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Melee")
 	float HitSphereRadius = 150.f;
